@@ -56,7 +56,16 @@ public class BankScenarios {
 	@BeforeClass
 	public void beforeClass()
 	{
-		System.setProperty("webdriver.chrome.driver", Constant.ChromeDriver);
+
+		if(System.getProperty("os.name").contains("Windows"))
+		{
+			System.setProperty("webdriver.chrome.driver", Constant.ChromeDriver_Windows);
+		}
+		else
+		{
+			System.setProperty("webdriver.chrome.driver", Constant.ChromeDriver_MAC);
+		}
+
 		driver = new ChromeDriver();
 		driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
 		driver.manage().window().maximize();
