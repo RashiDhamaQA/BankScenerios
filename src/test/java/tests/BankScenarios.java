@@ -21,8 +21,10 @@ import io.restassured.*;
 public class BankScenarios {
 
 	public static WebDriver driver;
+	//(interface )
 
 	@DataProvider(name = "add-customer")
+	//for a test case ,iterate for different values
 	public Object[][] addCustomer(){
 		Object [][] customer_details=new Object[7][3];
 		customer_details[0][0]="Christopher"; 	customer_details[0][1]="Connely"; 		customer_details[0][2]="L789C349";
@@ -69,6 +71,7 @@ public class BankScenarios {
 		driver = new ChromeDriver();
 		driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
 		driver.manage().window().maximize();
+		//implicit,explicit wait ,fluent wait
 	}
 
 	@BeforeMethod
@@ -79,7 +82,6 @@ public class BankScenarios {
 
 	@Test(dataProvider = "add-customer")
 	public void addCustomer(String customer_first_name,String customer_last_name , String postal_code) throws Exception{
-		//Providing wait fo 30 seconds
 		driver.findElement(By.xpath("//button[text()='Bank Manager Login']")).click();
 		driver.findElement(By.xpath("//button[contains(text(),'Add Customer')]")).click();
 		driver.findElement(By.xpath("//input[@placeholder='First Name']")).sendKeys(customer_first_name);
@@ -88,6 +90,7 @@ public class BankScenarios {
 		driver.findElement(By.xpath("//button[@type='submit']")).click();
 
 		driver.switchTo().alert().accept();
+		//pop up accept
 		driver.findElement(By.xpath("//button[contains(text(),'Customers')]")).click();
 
 		String firstName="//tr/td[1][contains(text(),'"+customer_first_name+"')]";
@@ -107,6 +110,7 @@ public class BankScenarios {
 
 			List<WebElement> ele = driver.findElements(By.xpath("//tr/td[contains(text(),'"+customer_first_name+"')]/following-sibling::td[contains(text(),'"+customer_last_name+"')]"));
 			System.out.println("Ele size : "+ele.size());
+			Assert.assertEquals(ele.size(),0);
 		}
 	}
 
@@ -124,7 +128,7 @@ public class BankScenarios {
 
 		Select account_no =new Select(driver.findElement(By.xpath("//select[@id='accountSelect']")));
 		account_no.selectByVisibleText("1003");
-
+//getting initial cust balance
 		int current_Account_balance = Integer.parseInt(driver.findElement(By.xpath("//strong[@class='ng-binding'][2]")).getText());
 		int final_amount=0;
 
@@ -156,11 +160,11 @@ public class BankScenarios {
 	@Test
 	public void addUser()
 	{
-		RestAssured.baseURI = "https://jsonplaceholder.typicode.com";
+		RestAssured.baseURI = "https://petstore3.swagger.io/api/v3/";
 		HashMap<String,Object> dataBody = new HashMap<String,Object>();
 
 		dataBody.put("id", 10);
-		dataBody.put("username", "Test_User");
+		dataBody.put("username", "Test_User_123");
 		dataBody.put("firstName", "John");
 		dataBody.put("lastName", "James");
 		dataBody.put("email", "john@email.com");
@@ -175,40 +179,40 @@ public class BankScenarios {
 				.header("Content-Type","application/json")
 				.contentType(ContentType.JSON)
 				.body(dataBody)
-				.log()
-				.body()
 				.when()
 				.post("/user")
 				.getBody();
 
 		//Getting username
-		JsonPath test_user = new JsonPath(rbdy.asString());
-		String userName = test_user.getString("username");
 
 		ResponseBody response = RestAssured.given()
 				.contentType(ContentType.JSON)
 				.when()
-				.get("/user/"+userName)
+				.get("/user/Test_User_123")
 				.getBody();
 
-		JsonPath read_user = new JsonPath(rbdy.asString());
+
+		JsonPath read_user = new JsonPath(response.asString());
 		String store_username = read_user.getString("username");
+		Assert.assertEquals(store_username,"Test_User_123");
+
 
 		// Updating user Test_User
 		HashMap<String,Object> updateRequest = new HashMap<String,Object>();
 
-		dataBody.put("id", 20);
-		dataBody.put("username", "Test_User");
-		dataBody.put("firstName", "John_Test");
-		dataBody.put("lastName", "James");
-		dataBody.put("email", "john@email.com");
-		dataBody.put("password", "12345");
-		dataBody.put("phone", "12345");
-		dataBody.put("userStatus", 1);
+		updateRequest.put("id", 10);
+		updateRequest.put("username", "Test_User");
+		updateRequest.put("firstName", "John_Test");
+		updateRequest.put("lastName", "James");
+		updateRequest.put("email", "john@email.com");
+		updateRequest.put("password", "12345");
+		updateRequest.put("phone", "12345");
+		updateRequest.put("userStatus", 1);
 
 
-		RequestSpecification httpRequest = RestAssured.given().header("Content-Type", "application/json");
-		ResponseBody res = httpRequest.body(updateRequest).put("/user/"+store_username).getBody(); // updating previous user
+		// updating previous user
+
+		ResponseBody res = RestAssured.given().header("Content-Type", "application/json").body(updateRequest).put("/user/"+store_username).getBody();
 
 		ResponseBody response_after_update = RestAssured.given()
 				.contentType(ContentType.JSON)
@@ -217,20 +221,20 @@ public class BankScenarios {
 				.getBody();
 
 		JsonPath response_after_update_json = new JsonPath(response_after_update.asString());
-		String response_after_update_string = response_after_update_json.getString("username");
+		String userNameAfterUpdate = response_after_update_json.getString("username");
 
 		//Delete request
-		Response delete = RestAssured.given().header("Content-Type", "application/json") .delete("/user/"+ response_after_update_string);
+		Response delete = RestAssured.given().header("Content-Type", "application/json") .delete("/user/"+ userNameAfterUpdate);
 
 		//verify user is deleted
 
 		String final_response = RestAssured.given()
 				.contentType(ContentType.JSON)
 				.when()
-				.get("/user/Test_User")   //passing updated username here
+				.get("/user/"+userNameAfterUpdate)   //passing updated username here
 				.then().extract().response().asString();
 
-		Assert.assertTrue(final_response.contains("Test_User"));
+		Assert.assertFalse(final_response.contains(userNameAfterUpdate));
 
 	}
 }
